@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>Export as gcode</name>
+    <id>com.thenewentity.export_gcode</id>
+    <output>
+        <extension>.gcode</extension>
+        <mimetype>text/plain</mimetype>
+        <filetypename>GCode (*.gcode)</filetypename>
+        <filetypetooltip>Exports shapes in this document as gcode</filetypetooltip>
+    </output>
+    <script>
+        <command location="inx" interpreter="python">export-gcode.py</command>
+    </script>
+</inkscape-extension>

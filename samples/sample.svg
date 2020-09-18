@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:gcode="http://www.thenewentity.com/gcode/0.1"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.1 (c497b03c, 2020-09-10)"
+   sodipodi:docname="sample.svg">
+  <defs
+     id="defs2">
+    <rect
+       x="116.41667"
+       y="9.0714286"
+       width="155.72619"
+       height="37.041667"
+       id="rect1064" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.35"
+     inkscape:cx="201.42857"
+     inkscape:cy="690.75366"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-width="2560"
+     inkscape:window-height="1440"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid66" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <ellipse
+       style="fill:none;stroke:#000000;stroke-width:6.35;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="head"
+       cx="124.73214"
+       cy="186.34225"
+       rx="80.886909"
+       ry="82.020836">
+      <gcode:settings
+         tool="1/4-in-endmill"
+         depth="{{full}}"
+         mode="outline" />
+    </ellipse>
+    <ellipse
+       style="fill:#ff0000;stroke-width:0.161411"
+       id="path260"
+       cx="92.604164"
+       cy="178.78275"
+       rx="15.497023"
+       ry="23.056547">
+      <gcode:settings />
+    </ellipse>
+    <ellipse
+       style="fill:#ff0000;stroke-width:0.28285"
+       id="ellipse262"
+       cx="160.2619"
+       cy="184.45239"
+       rx="30.238094"
+       ry="36.285713">
+      <gcode:settings />
+    </ellipse>
+    <ellipse
+       style="fill:#ff0000;stroke-width:0.124335"
+       id="ellipse264"
+       cx="119.44049"
+       cy="234.34525"
+       rx="40.065475"
+       ry="5.2916656">
+      <gcode:settings />
+    </ellipse>
+    <path
+       id="hair"
+       style="fill:none;stroke:#000000;stroke-width:6.35;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 196.54762,124.73214 c 12.49455,-23.78677 12.10047,-12.85643 24.19047,-24.946426 m -71.81547,-8.315476 c 8.68911,9.582692 28.61025,-16.708244 40.06547,-9.07143 2.42542,1.616946 4.53572,3.289046 4.53572,2.267858 m -83.91072,4.535715 C 121.13774,60.912327 123.55421,61.460617 102.80952,35.52976 M 74.083332,108.10119 C 64.898679,93.621057 60.561111,78.279367 65.011905,60.47619 m -7.559524,68.79167 C 33.230343,100.77823 59.48725,90.963555 13.607144,97.517856">
+      <gcode:settings
+         tool="1/4-in-endmill"
+         mode="outline"
+         depth="0.25" />
+    </path>
+    <text
+       xml:space="preserve"
+       id="text1062"
+       style="font-style:normal;font-weight:normal;font-size:10.58329999999999949px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1064);fill:#000000;fill-opacity:1;stroke:none;"
+       transform="matrix(3.1009737,0,0,4.3096421,-246.04183,-36.053945)"><tspan
+         x="116.41602"
+         y="18.727731"><tspan>Some test Text
+</tspan></tspan></text>
+  </g>
+  <gcode:globals
+     fulldepth="0.78">
+    <gcode:tools>
+      <gcode:tool
+         diameter="0.25in"
+         type="endmill"
+         id="1/4-in-endmill" />
+    </gcode:tools>
+  </gcode:globals>
+</svg>
