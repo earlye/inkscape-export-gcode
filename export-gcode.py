@@ -23,13 +23,15 @@ def getDescription(element):
     return ''
 
 class GcodeGlobals:
-    def __init__(self, fulldepth, scaleX = 1.0/25.4, scaleY = -1.0/25.4, translateX = 1, translateY = 7):
+    def __init__(self, fulldepth, scaleX = 1.0, scaleY = -1.0, translateX = 0, translateY = 7):
         self.fulldepth = fulldepth
         self.safeHeight = 0.25
         self.scaleX = scaleX
         self.scaleY = scaleY
         self.translateX = translateX
         self.translateY = translateY
+        self.xyfeed = 25.400
+        self.supportsCubicSpline = False
 
     def echo(self, stream):
         gcode(stream, '(Globals:)\n')
@@ -49,7 +51,7 @@ def eval(expression, default, context):
         return default
 
 class GcodeSettings:
-    def __init__(self, depth, tool, increment = 0.1, context):
+    def __init__(self, depth, tool, increment = 0.1, context = None):
         self.depth = eval(depth, 0.25, context)
         self.tool = tool
         self.increment = increment
@@ -74,21 +76,23 @@ def gcode(stream, code):
 def gcodeSafeHeight(stream, gcodeGlobals):
     gcode(stream, f'G00 Z{gcodeGlobals.safeHeight} (raise cutter to safe height)\n')
 
-def gcodeCoordinates(X = None, Y = None, Z = None):
+def gcodeCoordinates(X = None, Y = None, Z = None, F = None):
     result = ''
     if X != None:
-        result += f' X{X}'
+        result += f' X{X:.5f}'
     if Y != None:
-        result += f' Y{Y}'
+        result += f' Y{Y:.5f}'
     if Z != None:
-        result += f' Z{Z}'
+        result += f' Z{Z:.5f}'
+    if F != None:
+        result += f' F{F:.5f}'
     return result.strip()
 
-def gcodeRapid(stream, X, Y, Z, comment):
-    gcode(stream, f'G00 {gcodeCoordinates(X,Y,Z)} ({comment})\n')
+def gcodeRapid(stream, comment, X = None, Y = None, Z = None, F = None ):
+    gcode(stream, f'G00 {gcodeCoordinates(X=X,Y=Y,Z=Z,F=F)} ({comment})\n')
 
-def gcodeLinear(stream, X, Y, Z, comment):
-    gcode(stream, f'G01 {gcodeCoordinates(X,Y,Z)} ({comment})\n')
+def gcodeLinear(stream, comment, X = None, Y = None, Z = None, F = None ):
+    gcode(stream, f'G01 {gcodeCoordinates(X=X,Y=Y,Z=Z,F=F)} ({comment})\n')
 
 
 def cutPathAtDepth(stream, gcodeGlobals, depth, needSafeHeight, path):
@@ -107,8 +111,8 @@ def cutPathAtDepth(stream, gcodeGlobals, depth, needSafeHeight, path):
             pInitial = p0
             if needSafeHeight:
                 gcodeSafeHeight(stream, gcodeGlobals)
-            gcodeRapid(stream, p0[0], p0[1], None, f'rapid to start of curve')
-            gcodeLinear(stream, None, None, depth, f'plunge to depth')
+            gcodeRapid(stream, 'rapid to start of curve', X=p0[0], Y=p0[1], F=60)
+            gcodeLinear(stream, 'plunge to depth', Z=depth, F=gcodeGlobals.xyfeed)
             needSafeHeight = True
         if letter == 'C':
             args = command.args
@@ -116,22 +120,27 @@ def cutPathAtDepth(stream, gcodeGlobals, depth, needSafeHeight, path):
             p1 = (args[0] * sX + tX, args[1] * sY + tY)
             p2 = (args[2] * sX + tX, args[3] * sY + tY)
             p3 = (args[4] * sX + tX, args[5] * sY + tY)
-            # gcode(stream, f'      (p0: {p0} p1:{p1} p2:{p2} p3:{p3})\n')
-            for largeT in range(0,100,10):
-                t = largeT / 100.0
-                bez = [p0,p1,p2,p3]
-                pt = bezier.bezierpointatt(bez, t)
-                gcodeLinear(stream, pt[0], pt[1], None, f't:{t}')
-            gcodeLinear(stream, p3[0], p3[1], None, f't:1.0')
+            if gcodeGlobals.supportsCubicSpline:
+                p1i = (p1[0] - p0[0], p1[1] - p0[0])
+                p2i = (p2[0] - p1[0], p2[1] - p1[1])
+                gcode(stream, f'G5 I{p1i[0]} J{p1i[1]} P{p2i[0]} Q{p2i[1]} X{p3[0]} Y{p3[1]} (cubic spline)\n')
+            else:
+                # gcode(stream, f'      (p0: {p0} p1:{p1} p2:{p2} p3:{p3})\n')
+                for largeT in range(0,100,10):
+                    t = largeT / 100.0
+                    bez = [p0,p1,p2,p3]
+                    pt = bezier.bezierpointatt(bez, t)
+                    gcodeLinear(stream, f't:{t}', X=pt[0], Y=pt[1], F=gcodeGlobals.xyfeed)
+                gcodeLinear(stream, f't:1.0', X=p3[0], Y=p3[1], F=gcodeGlobals.xyfeed)
             p0 = p3
             needSafeHeight = True
         if letter == 'L':
             p0 = (command.args[0] * sX + tX, command.args[1] * sY + tY)
-            gcodeLinear(stream, p0[0], p0[1], None, f'line')
+            gcodeLinear(stream, f'line', X=p0[0], Y=p0[1], F=gcodeGlobals.xyfeed)
             needSafeHeight = True
         if letter == 'Z':
             p0 = pInitial
-            gcodeLinear(stream, p0[0], p0[1], None, f'zone close')
+            gcodeLinear(stream, f'zone close', X=p0[0], Y=p0[1], F=gcodeGlobals.xyfeed)
             needSafeHeight = False
     return needSafeHeight
 
@@ -185,6 +194,9 @@ class ExportCncGcode(inkex.OutputExtension):
         gcodeGlobals = GcodeGlobals(0.80)
         gcode(stream, '\n\n')
         gcodeGlobals.echo(stream)
+        gcode(stream, 'G17 (XY plane)\n')
+        gcode(stream, 'G21 (mm mode)\n')
+        gcode(stream, 'G40 (compensation off)\n')
         gcode(stream, 'G90 (absolute distance mode)\n')
 
         for elem in self.svg.selection.paint_order().values():
