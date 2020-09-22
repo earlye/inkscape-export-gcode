@@ -191,7 +191,11 @@ class ExportCncGcode(inkex.OutputExtension):
         gcode(stream,f'(Name: {name})\n')
 
         # TODO: find global gcode globals in the svg XML
-        gcodeGlobals = GcodeGlobals(0.80)
+        gcodeGlobalsTag = self.svg.findone('.//globals')
+        gcode(stream,f'{gcodeGlobalsTag}')
+
+        bbox = self.svg.get_page_bbox()
+        gcodeGlobals = GcodeGlobals(0.80, translateX = bbox.left, translateY = bbox.bottom)
         gcode(stream, '\n\n')
         gcodeGlobals.echo(stream)
         gcode(stream, 'G17 (XY plane)\n')
