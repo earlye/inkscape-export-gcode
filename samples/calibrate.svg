@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
+   xmlns:gcode="http://xml.thenewentity.com/gcode/0.0"
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -15,7 +16,14 @@
    inkscape:version="1.0.1 (c497b03c, 2020-09-10)"
    sodipodi:docname="calibrate.svg">
   <defs
-     id="defs1443" />
+     id="defs1443">
+    <rect
+       x="-34.299505"
+       y="55.532529"
+       width="168.2309"
+       height="33.319518"
+       id="rect1715" />
+  </defs>
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -24,8 +32,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.80996074"
-     inkscape:cx="518.93609"
-     inkscape:cy="374.48465"
+     inkscape:cx="636.22574"
+     inkscape:cy="548.56717"
      inkscape:document-units="in"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -38,107 +46,15 @@
      fit-margin-right="1"
      fit-margin-bottom="1"
      inkscape:window-width="2560"
-     inkscape:window-height="1440"
+     inkscape:window-height="1317"
      inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-y="23"
      inkscape:window-maximized="0"
      inkscape:snap-grids="false"
      inkscape:snap-to-guides="true"
      inkscape:snap-others="false"
      inkscape:object-nodes="false"
-     inkscape:snap-nodes="false">
-    <sodipodi:guide
-       position="82.550802,290.36295"
-       orientation="-1,0"
-       id="guide2344"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="107.9508,292.06385"
-       orientation="-1,0"
-       id="guide2346"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="97.594253,247.84063"
-       orientation="0,1"
-       id="guide2348"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="20.109132,228.79063"
-       orientation="0,1"
-       id="guide2350"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="28.575002,154.84707"
-       orientation="-1,0"
-       id="guide320"
-       inkscape:label=""
-       inkscape:locked="true"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="133.35001,269.74749"
-       orientation="-1,0"
-       id="guide358"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="158.60479,282.45664"
-       orientation="-1,0"
-       id="guide360"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="209.4414,262.66898"
-       orientation="-1,0"
-       id="guide362"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="184.15001,259.61234"
-       orientation="-1,0"
-       id="guide364"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="235.02058,260.5776"
-       orientation="-1,0"
-       id="guide366"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="260.35002,258.16447"
-       orientation="-1,0"
-       id="guide368"
-       inkscape:label=""
-       inkscape:locked="false"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="238.12502,141.41206"
-       orientation="-1,0"
-       id="guide370"
-       inkscape:label=""
-       inkscape:locked="true"
-       inkscape:color="rgb(0,0,255)" />
-    <sodipodi:guide
-       position="16.891912,149.03401"
-       orientation="0,1"
-       id="guide390"
-       inkscape:label=""
-       inkscape:locked="true"
-       inkscape:color="rgb(0,0,255)" />
-  </sodipodi:namedview>
+     inkscape:snap-nodes="false" />
   <metadata
      id="metadata1446">
     <rdf:RDF>
@@ -147,18 +63,45 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
-    <path
-       id="rect1451"
-       style="fill:#ff0000"
-       d="m 25.400002,25.400001 -1e-6,254.000019 H 279.40002 V 25.400001 Z"
-       sodipodi:nodetypes="cccccc" />
+     id="layer1"
+     transform="translate(146.34455,94.078639)">
+    <g
+       id="g1541"
+       style="x-gcode-depth:0.80">
+      <path
+         id="rect1451"
+         style="fill:#ff0000"
+         d="M -120.94455,-68.678638 V 185.32138 H 133.05547 V -68.678638 Z"
+         sodipodi:nodetypes="cccccc"
+         x-gcode-depth="0.25" />
+    </g>
+    <g
+       id="g1585"
+       transform="matrix(1.0098375,0,0,0.47958563,-192.64141,-35.292431)">
+      <ellipse
+         style="fill:none;stroke:#000000;stroke-width:2.54;stroke-linejoin:bevel;stroke-miterlimit:0.25"
+         id="path1579"
+         cx="206.77701"
+         cy="83.13546"
+         rx="55.859192"
+         ry="57.32917"
+         gcode:depth="0.80" />
+      <rect
+         style="fill:none;stroke:#000000;stroke-width:2.54;stroke-linejoin:bevel;stroke-miterlimit:0.25"
+         id="rect1581"
+         width="58.472488"
+         height="72.192284"
+         x="184.23732"
+         y="-13.719804"
+         gcode:depth="0.80" />
+    </g>
   </g>
+  <gcode:globals />
 </svg>
