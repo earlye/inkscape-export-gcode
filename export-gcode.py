@@ -24,6 +24,9 @@ class GcodeWriter:
     def write(self, code):
         self.stream.write((' ' * self.depth + code).encode('utf-8'))
 
+    def comment(self, comment):
+        self.write(f'({comment})\n')
+
     def indent(self):
         return GcodeWriter(self.stream, self.depth + 2)
 
@@ -122,10 +125,10 @@ def gcodeLinear(stream, comment, X = None, Y = None, Z = None, F = None ):
 def cutPathAtDepth(stream, gcodeGlobals, transform, depth, needSafeHeight, path):
     p0 = None
     pInitial = None
-    stream.write( f'(carving path at depth:{depth})\n')
+    stream.comment(f'carving path at depth:{depth}')
     for command in path:
         letter = command.letter
-        stream.write( f'(svg path command:"{command}")\n')
+        stream.comment(f'svg path command:"{command}"')
         if letter == 'M':
             p0 = transform.apply_to_point((command.args[0], command.args[1]))
             pInitial = p0
@@ -165,10 +168,10 @@ def cutPathAtDepth(stream, gcodeGlobals, transform, depth, needSafeHeight, path)
     return needSafeHeight
 
 def gcodePath(stream, gcodeGlobals, GcodeStyle, path, transform):
-    stream.write(f'(path commands:)\n')
-    stream.write(f'(path:{path})\n')
+    stream.comment(f'path commands:')
+    stream.comment(f'path:{path}')
     csp = CubicSuperPath(path).to_path()
-    stream.write(f'(cubicsuperpath parsed:{csp} type:{type(csp).__name__})\n')
+    stream.comment(f'cubicsuperpath parsed:{csp} type:{type(csp).__name__}')
 
     depth = 0
     needSafeHeight = True
@@ -181,32 +184,31 @@ def gcodePath(stream, gcodeGlobals, GcodeStyle, path, transform):
 def exportEllipse(stream, gcodeGlobals, element, transform):
     GcodeStyle = getGcodeStyle(stream, element)
 
-    stream.write(f'(type:"Ellipse" id:"{element.get_id()}" radius:"{element.radius}" center:"{element.center}")\n')
-    stream.write(f'(composed_transform:"{element.composed_transform()}")\n')
-    stream.write(f'(transform:"{transform}")\n')
+    stream.comment(f'type:"Ellipse" id:"{element.get_id()}" radius:"{element.radius}" center:"{element.center}"')
+    stream.comment(f'composed_transform:"{element.composed_transform()}"')
+    stream.comment(f'transform:"{transform}"')
     effectiveTransform = transform.__mul__(element.composed_transform())
-    stream.write(f'(effectiveTransform:"{effectiveTransform}")\n')
+    stream.comment(f'effectiveTransform:"{effectiveTransform}"')
     gcodePath(stream.indent(), gcodeGlobals, GcodeStyle, element.path, effectiveTransform)
 
 def exportPath(stream, gcodeGlobals, element, transform):
     GcodeStyle = getGcodeStyle(stream, element)
 
-    stream.write(f'(type:"{type(element).__name__}" id:"{element.get_id()}")\n')
-    stream.write(f'(composed_transform:"{element.composed_transform()}")\n')
-    stream.write(f'(transform:"{transform}")\n')
+    stream.comment(f'type:"{type(element).__name__}" id:"{element.get_id()}"')
+    stream.comment(f'composed_transform:"{element.composed_transform()}"')
+    stream.comment(f'transform:"{transform}"')
     effectiveTransform = transform.__mul__(element.composed_transform())
-    stream.write(f'(effectiveTransform:"{effectiveTransform}")\n')
+    stream.comment(f'effectiveTransform:"{effectiveTransform}"')
     gcodePath(stream.indent(), gcodeGlobals, GcodeStyle, element.path, effectiveTransform)
 
 def exportTextElement(stream, gcodeGlobals, element, transform):
     GcodeStyle = getGcodeStyle(stream, element)
 
-    stream.write(f'\n\n')
-    stream.write(f'(type:"{type(element).__name__}" id:"{element.get_id()}")\n')
-    stream.write(f'(dir:"{element.__dir__()}")\n')
-    stream.write(f'(elements._selected.__dir__():"{elements._selected.__dir__()}")\n')
-    stream.write(f'(path: {element.get_path()})\n') # path is empty. :WTF:
-    # stream.write(f'(makeelement: {element.makeelement()})\n') apparently from lxml, requires one param, probably not how to get a path
+    stream.comment(f'type:"{type(element).__name__}" id:"{element.get_id()}"')
+    stream.comment(f'dir:"{element.__dir__()}"')
+    stream.comment(f'elements._selected.__dir__():"{elements._selected.__dir__()}"')
+    stream.comment(f'path: {element.get_path()}') # path is empty. :WTF:
+    # stream.comment(f'makeelement: {element.makeelement()}') apparently from lxml, requires one param, probably not how to get a path
 
     for child in element.tspans():
         stream.write( f'({getElementNamespace(child)}:{child.TAG} => {type(child).__name__})\n')
@@ -217,9 +219,9 @@ def exportTspan(stream, gcodeGlobals, element, transform):
     GcodeStyle = getGcodeStyle(stream, element)
 
     stream.write(f'\n\n')
-    stream.write(f'(type:"{type(element).__name__}" id:"{element.get_id()}")\n')
-    stream.write(f'(dir:"{element.__dir__()}")\n')
-    stream.write(f'(path: {element.get_path()})\n')
+    stream.comment(f'type:"{type(element).__name__}" id:"{element.get_id()}"')
+    stream.comment(f'dir:"{element.__dir__()}"')
+    stream.comment(f'path: {element.get_path()}')
     for child in element.iterchildren():
         stream.write( f'({getElementNamespace(child)}:{child.TAG} => {type(child).__name__})\n')
         fn = elementExportFunctions.get(type(child).__name__, exportIgnore)
@@ -263,7 +265,7 @@ class ExportCncGcode(inkex.OutputExtension):
         root = GcodeWriter(rawStream, 0)
         root.write('(Inkscape => GCode Save)\n')
         stream = root.indent()
-        stream.write(f'(Name: {name})\n')
+        stream.comment(f'Name: {name}')
 
         # find global gcode globals in the svg XML
         gcodeGlobalsTag = self.svg.xpath('.//gcode:globals',
@@ -273,10 +275,10 @@ class ExportCncGcode(inkex.OutputExtension):
         gcodeGlobals = GcodeGlobals(0.80, translateX = bbox.left, translateY = bbox.bottom)
         gcodeGlobals.echo(stream)
 
-        stream.write('(Setting up Machine)\n')
+        stream.comment('Setting up Machine')
         self.setupMachine(stream.indent())
 
-        stream.write('(Traversing SVG document tree)\n')
+        stream.comment('Traversing SVG document tree')
         treeStream = stream.indent()
         for elem in self.svg.iterchildren():
             treeStream.write( f'({getElementNamespace(elem)}:{elem.TAG} => {type(elem).__name__})\n')
