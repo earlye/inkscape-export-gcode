@@ -16,6 +16,9 @@ from inkex import bezier, CubicSuperPath, ShapeElement, ColorIdError, ColorError
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+def wrapComment(comment, prefix = None):
+    return f'{prefix}({comment})' if comment else ''
+
 class GcodeWriter:
     def __init__(self, stream, depth):
         self.stream = stream
@@ -24,8 +27,11 @@ class GcodeWriter:
     def write(self, code):
         self.stream.write((' ' * self.depth + code).encode('utf-8'))
 
+    def code(self, code=None, comment = None, X = None, Y = None, Z = None, F = None):
+        self.write(f'{code}{gcodeCoordinates(X=X,Y=Y,Z=Z,F=F)}{wrapComment(comment," ")}\n')
+
     def comment(self, comment):
-        self.write(f'({comment})\n')
+        self.write(wrapComment(comment) + '\n')
 
     def indent(self):
         return GcodeWriter(self.stream, self.depth + 2)
@@ -48,14 +54,14 @@ class GcodeGlobals:
         self.supportsCubicSpline = False
 
     def echo(self, stream):
-        stream.write( '(Globals:)\n')
+        stream.comment('Globals:')
         s2 = stream.indent()
-        s2.write(f'(.fulldepth: {self.fulldepth})\n')
-        s2.write(f'(.safeHeight: {self.safeHeight})\n')
-        s2.write(f'(.scaleX: {self.scaleX})\n')
-        s2.write(f'(.scaleY: {self.scaleY})\n')
-        s2.write(f'(.translateX: {self.translateX})\n')
-        s2.write(f'(.translateY: {self.translateY})\n')
+        s2.comment(f'.fulldepth: {self.fulldepth}')
+        s2.comment(f'.safeHeight: {self.safeHeight}')
+        s2.comment(f'.scaleX: {self.scaleX}')
+        s2.comment(f'.scaleY: {self.scaleY}')
+        s2.comment(f'.translateX: {self.translateX}')
+        s2.comment(f'.translateY: {self.translateY}')
 
     pass
 
@@ -82,7 +88,7 @@ def getGcodeStyle(stream, element):
 
     mode = style.get("x-gcode-mode", 'center')
 
-    stream.write(f'(GcodeStyle depth:{depth} tool:{tool} increment:{increment} mode:{mode})\n')
+    stream.comment(f'GcodeStyle depth:{depth} tool:{tool} increment:{increment} mode:{mode}')
 
     return GcodeStyle(depth, tool, increment, mode)
 
@@ -96,12 +102,12 @@ def typeName(element):
         return '<unrecognized>'
 
 def exportIgnore(stream, gcodeGlobals, element, *args, **kwargs):
-    stream.write( f'(ignoring entry of unrecognized type: {typeName(element)})\n');
+    stream.comment(f'ignoring entry of unrecognized type: {typeName(element)}');
     pass
 
 
 def gcodeSafeHeight(stream, gcodeGlobals):
-    stream.write( f'G00 Z{gcodeGlobals.safeHeight} (raise cutter to safe height)\n')
+    stream.write(f'G00 Z{gcodeGlobals.safeHeight} (raise cutter to safe height)\n')
 
 def gcodeCoordinates(X = None, Y = None, Z = None, F = None):
     result = ''
@@ -113,14 +119,13 @@ def gcodeCoordinates(X = None, Y = None, Z = None, F = None):
         result += f' Z{Z:.5f}'
     if F != None:
         result += f' F{F:.5f}'
-    return result.strip()
+    return result
 
 def gcodeRapid(stream, comment, X = None, Y = None, Z = None, F = None ):
-    stream.write( f'G00 {gcodeCoordinates(X=X,Y=Y,Z=Z,F=F)} ({comment})\n')
+    stream.code(code='G00', X=X, Y=Y, Z=Z, F=F, comment=comment)
 
 def gcodeLinear(stream, comment, X = None, Y = None, Z = None, F = None ):
-    stream.write( f'G01 {gcodeCoordinates(X=X,Y=Y,Z=Z,F=F)} ({comment})\n')
-
+    stream.code(code='G01', X=X, Y=Y, Z=Z, F=F, comment=comment)
 
 def cutPathAtDepth(stream, gcodeGlobals, transform, depth, needSafeHeight, path):
     p0 = None
@@ -139,16 +144,16 @@ def cutPathAtDepth(stream, gcodeGlobals, transform, depth, needSafeHeight, path)
             needSafeHeight = True
         if letter == 'C':
             args = command.args
-            # stream.write( f'  (args: {args})\n')
+            # stream.write(f'  (args: {args})\n')
             p1 = transform.apply_to_point((args[0], args[1]))
             p2 = transform.apply_to_point((args[2], args[3]))
             p3 = transform.apply_to_point((args[4], args[5]))
             if gcodeGlobals.supportsCubicSpline:
                 p1i = (p1[0] - p0[0], p1[1] - p0[0])
                 p2i = (p2[0] - p1[0], p2[1] - p1[1])
-                stream.write( f'G5 I{p1i[0]} J{p1i[1]} P{p2i[0]} Q{p2i[1]} X{p3[0]} Y{p3[1]} (cubic spline)\n')
+                stream.write(f'G5 I{p1i[0]} J{p1i[1]} P{p2i[0]} Q{p2i[1]} X{p3[0]} Y{p3[1]} (cubic spline)\n')
             else:
-                # stream.write( f'  (p0: {p0} p1:{p1} p2:{p2} p3:{p3})\n')
+                # stream.write(f'  (p0: {p0} p1:{p1} p2:{p2} p3:{p3})\n')
                 for largeT in range(0,100,10):
                     t = largeT / 100.0
                     bez = [p0,p1,p2,p3]
@@ -211,7 +216,7 @@ def exportTextElement(stream, gcodeGlobals, element, transform):
     # stream.comment(f'makeelement: {element.makeelement()}') apparently from lxml, requires one param, probably not how to get a path
 
     for child in element.tspans():
-        stream.write( f'({getElementNamespace(child)}:{child.TAG} => {type(child).__name__})\n')
+        stream.comment(f'{getElementNamespace(child)}:{child.TAG} => {type(child).__name__}')
         fn = elementExportFunctions.get(type(child).__name__, exportIgnore)
         fn(stream.indent(), gcodeGlobals, child, transform)
 
@@ -223,14 +228,14 @@ def exportTspan(stream, gcodeGlobals, element, transform):
     stream.comment(f'dir:"{element.__dir__()}"')
     stream.comment(f'path: {element.get_path()}')
     for child in element.iterchildren():
-        stream.write( f'({getElementNamespace(child)}:{child.TAG} => {type(child).__name__})\n')
+        stream.comment(f'{getElementNamespace(child)}:{child.TAG} => {type(child).__name__}')
         fn = elementExportFunctions.get(type(child).__name__, exportIgnore)
         fn(stream.indent(), gcodeGlobals, child, transform)
 
 def exportLayer(stream, gcodeGlobals, element, transform):
     GcodeStyle = getGcodeStyle(stream, element)
     for child in element.iterchildren():
-        stream.write( f'({getElementNamespace(child)}:{child.TAG} => {type(child).__name__})\n')
+        stream.comment(f'{getElementNamespace(child)}:{child.TAG} => {type(child).__name__}')
         fn = elementExportFunctions.get(type(child).__name__, exportIgnore)
         fn(stream.indent(), gcodeGlobals, child, transform)
 
@@ -255,15 +260,15 @@ class ExportCncGcode(inkex.OutputExtension):
     #select_all = (ShapeElement,)
 
     def setupMachine(self, stream):
-        stream.write( 'G17 (XY plane)\n')
-        stream.write( 'G21 (mm mode)\n')
-        stream.write( 'G40 (compensation off)\n')
-        stream.write( 'G90 (absolute distance mode)\n')
+        stream.code(code='G17', comment='XY plane')
+        stream.code(code='G21', comment='mm mode')
+        stream.code(code='G40', comment='compensation off')
+        stream.code(code='G90', comment='absolute distance mode')
 
     def save(self, rawStream):
         name = self.svg.name.replace('.svg', '')
         root = GcodeWriter(rawStream, 0)
-        root.write('(Inkscape => GCode Save)\n')
+        root.comment('Inkscape => GCode Save')
         stream = root.indent()
         stream.comment(f'Name: {name}')
 
@@ -281,7 +286,7 @@ class ExportCncGcode(inkex.OutputExtension):
         stream.comment('Traversing SVG document tree')
         treeStream = stream.indent()
         for elem in self.svg.iterchildren():
-            treeStream.write( f'({getElementNamespace(elem)}:{elem.TAG} => {type(elem).__name__})\n')
+            treeStream.comment(f'{getElementNamespace(elem)}:{elem.TAG} => {type(elem).__name__}')
             fn = elementExportFunctions.get(type(elem).__name__, exportIgnore)
             fn(
                 treeStream.indent(),
@@ -293,7 +298,6 @@ class ExportCncGcode(inkex.OutputExtension):
 
         gcodeSafeHeight(stream, gcodeGlobals)
         stream.write(f'M02 (end of program)\n')
-
 
 if __name__ == '__main__':
     ExportCncGcode().run()
