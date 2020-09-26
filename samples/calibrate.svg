@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   xmlns:gcode="http://xml.thenewentity.com/gcode/0.0"
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -32,7 +31,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.80996074"
-     inkscape:cx="636.22574"
+     inkscape:cx="181.88273"
      inkscape:cy="548.56717"
      inkscape:document-units="in"
      inkscape:current-layer="layer1"
@@ -74,34 +73,32 @@
      transform="translate(146.34455,94.078639)">
     <g
        id="g1541"
-       style="x-gcode-depth:0.80">
+       style="x-gcode-depth:0.8;fill:#ff0000;x-gcode-edge-mode:outside">
       <path
          id="rect1451"
-         style="fill:#ff0000"
          d="M -120.94455,-68.678638 V 185.32138 H 133.05547 V -68.678638 Z"
          sodipodi:nodetypes="cccccc"
-         x-gcode-depth="0.25" />
+         x-gcode-depth="0.25"
+         style="fill:#ff0000" />
     </g>
     <g
        id="g1585"
-       transform="matrix(1.0098375,0,0,0.47958563,-192.64141,-35.292431)">
+       transform="matrix(1.0098375,0,0,0.47958563,-192.64141,-35.292431)"
+       style="x-gcode-curve-increment:0.05">
       <ellipse
          style="fill:none;stroke:#000000;stroke-width:2.54;stroke-linejoin:bevel;stroke-miterlimit:0.25"
          id="path1579"
          cx="206.77701"
          cy="83.13546"
          rx="55.859192"
-         ry="57.32917"
-         gcode:depth="0.80" />
+         ry="57.32917" />
       <rect
          style="fill:none;stroke:#000000;stroke-width:2.54;stroke-linejoin:bevel;stroke-miterlimit:0.25"
          id="rect1581"
          width="58.472488"
          height="72.192284"
          x="184.23732"
-         y="-13.719804"
-         gcode:depth="0.80" />
+         y="-13.719804" />
     </g>
   </g>
-  <gcode:globals />
 </svg>

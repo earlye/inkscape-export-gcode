@@ -9,11 +9,39 @@ document.
 1. Clone, symlink, or copy this repository into your
 Inkscape/extensions directory and restart Inkscape.
 
+## Goals:
+
+1. [done] Export G-Code suitable for use on a CNC router table,
+   directly from Inkscape.
+
+2. [in progress] Support offsetting paths to the center, inside, or
+   outside of SVG paths.
+
+3. Support filling paths (cutting pockets) using two facing patterns:
+   * [in progress] spiral
+   * hatch.
+
+4. Support cutting paths to depth in a continuous ramp rather than
+   plunge, cut at offset depth, plunge again, etc., until hitting bottom.
+   Seems each line segment ought to be able to plunge continuously.
+
+5. Support generating 3d surfacing paths using raster data as a depth
+   map. This includes the crazy fill patterns that Inkscape can produce,
+   so gradients, waves, yada yada.
+
+6. Provide a UI for specifying the CSS styles that control all of the
+   gcode exporting.
+
+## Non-goals
+
+1. Patching Inkscape itself. We will do so if we think it's necessary
+   in order to accomplish our goals, but would prefer to avoid this.
+
 ## Use:
 
 Gcode is configured through the use of extended CSS styles. This is
 nice because we can leverage all of the inheritance rules that CSS
-affords.
+provides.
 
 Until a UI is developed to edit them, your best bet is to use the XML
 Editor in Inkscape (Edit => XML Editor)
@@ -36,20 +64,37 @@ the cost of longer gcode.
 * Reference to a def containing a tool
 * Default: ''
 
-### x-gcode-mode
-* One of: center, inside, outside, spiral, angled-fill, v-carve
+### x-gcode-tool-{x-gcode-tool}-diameter
+* Positive distance
+* Default: 0.25
+
+Diameter of the tool.
+
+### x-gcode-stepover
+* Positive distance
+* Default: 0.8 * tool diameter
+
+When filling using spiral, how far should each offset be stepped over?
+
+### x-gcode-edge-mode
+* One of: center, inside, outside, v-carve
 * Default: center
 
 *Not supported yet*
-This controls how the path is traced in gcode.
-If angled-fill is specified, x-gcode-fill-angle controls the angle of the lines cut into the surface
-If v-carve is specified, the tool specified by x-gcode-tool will control the cutter angle. (TBD)
+This controls how the edge of the path is traced in gcode.
+
+### x-gcode-fill-mode
+* One of: none, spiral, hatch
+* Default: none
+
+*Not supported yet*
+This controls how the area of a path is filled in gcode.
 
 ### x-gcode-fill-angle
 * Angle in degrees
 
 *Not supported yet*
-The angle of the lines cut into the surface.
+The angle of the lines cut into the surface when 'hatch' is specified for x-gcode-fill-mode
 
 ## Known Issues:
 
