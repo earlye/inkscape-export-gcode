@@ -11,6 +11,7 @@ Export cnc gcode (.gcode)
 import inkex
 import json
 import os
+import re
 from inkex import bezier, Group, CubicSuperPath, ShapeElement, ColorIdError, ColorError, transforms, elements, Style
 from inkex import command # deprecated. Danger!
 from synfig_prepare import InkscapeActionGroup
@@ -59,44 +60,68 @@ def eval(expression, default):
 def mmFromInch(value):
     return value * 25.4
 
+def isNumber(value):
+    return isinstance(value, (int, float, complex)) and not isinstance(value, bool)
+
+distanceRegex = re.compile('(([0-9]*(\.[0-9]*))(/([0-9]*(\.[0-9]*)))?)(px|in|mm|cm|Q|pc|pt)?')
+unitFactors = { 'in': 25.4, 'px': 25.4 / 96.0, 'cm': 1.0/100.0, 'mm': 1.0, 'Q': 40.0/100.0, 'pc': 25.4/6.0, 'pt': 25.4/72.0 }
+def distance(stream, value, defaultValue = None):
+    if isNumber(value):
+        return value
+    if value is None:
+        return defaultValue
+    match = distanceRegex.match(value)
+    if match is None:
+        return defaultValue
+
+    # stream.comment(f"distance: {value} {defaultValue} 0:{match.group(0)} 1:{match.group(1)} 2:{match.group(2)} 3:{match.group(3)} 4:{match.group(4)} 5:{match.group(5)} 6:{match.group(6)} 7:{match.group(7)}")
+    numerator = float(match.group(2))
+    denominator = match.group(5)
+    if denominator is None:
+        denominator = 1.0
+    else:
+        denominator = float(denominator)
+    unit = match.group(7) or 'mm'
+    unitFactor = unitFactors.get(unit, 'mm')
+
+    unitValue = numerator / denominator
+    scaledValue = unitValue * unitFactor
+    stream.comment(f"distance: {value} {unitValue}{unit} {scaledValue}mm")
+    return scaledValue
+
 class GcodeStyle:
-    def __init__(self, style):
-        self.depth = eval(style.get("x-gcode-depth", None), -0.25)
-        self.depthIncrement = eval(style.get("x-gcode-depth-increment", None), 0.1)
+    def __init__(self, stream, style):
+        self.depth = distance(stream, style.get("x-gcode-depth", None), 0)
+        self.depthIncrement = distance(stream, style.get("x-gcode-depth-increment", None), mmFromInch(0.1))
         if self.depthIncrement < 0:
             self.depthIncrement = 0.1
         if self.depthIncrement > self.depth:
             self.depthIncrement = self.depth
 
         self.tool = style.get("x-gcode-tool", 'default')
-        self.toolDiameter = style.get(f"x-code-tool-{self.tool}-diameter", 0.25)
-        self.toolStepOver = style.get(f"x-code-tool-{self.tool}-stepover", self.toolDiameter * 0.8 )
-        self.stepOver = style.get("x-code-stepover", self.toolStepOver)
+        self.toolDiameter = distance(stream, style.get(f"x-gcode-tool-{self.tool}-diameter", mmFromInch(0.25)))
+        self.toolStepOver = distance(stream, style.get(f"x-gcode-tool-{self.tool}-stepover", self.toolDiameter * 0.8 ))
+        self.stepOver = distance(stream, style.get("x-gcode-stepover", self.toolStepOver))
 
-        self.curveIncrement = eval(style.get("x-gcode-curve-increment", None), 0.1)
+        # Todo: switch from curveIncrement to maxCurveSegmentLength
+        self.curveIncrement = distance(stream, style.get("x-gcode-curve-increment", None), 0.1)
         if self.curveIncrement < 0 or self.curveIncrement > 1:
             self.curveIncrement = 0.1
         self.edgeMode = style.get("x-gcode-edge-mode", 'center')
         self.fillMode = style.get("x-gcode-fill-mode", '')
 
-        self.feedxy = eval(style.get("x-gcode-feed-xy", None), 25)
-        self.feedz = eval(style.get("x-gcode-feed-z", None), 10)
+        self.feedxy = distance(stream, style.get("x-gcode-feed-xy", None), mmFromInch(25))
+        self.feedz = distance(stream, style.get("x-gcode-feed-z", None), mmFromInch(10))
 
-        self.rapidxy = eval(style.get("x-gcode-rapid-xy", None), 60)
-        self.rapidz = eval(style.get("x-gcode-rapid-z", None), 60)
+        self.rapidxy = distance(stream, style.get("x-gcode-rapid-xy", None), mmFromInch(60))
+        self.rapidz = distance(stream, style.get("x-gcode-rapid-z", None), mmFromInch(60))
         self.supportsCubicSpline = False
         self.safeHeight = mmFromInch(0.25)
 
 def getGcodeStyle(stream, style):
-    result = GcodeStyle(style)
-    stream.comment(f'SVG Style: {style}')
+    stream.comment(f'SvgStyle: {style}')
+    result = GcodeStyle(stream, style)
     stream.comment(f'GcodeStyle: {json.dumps(result.__dict__)}')
-    return result
-
-def getDocumentGcodeStyle(stream, document):
-    group = Group()
-    document.add(group)
-    result = getElementGcodeStyle(stream, group)
     return result
 
 def getElementGcodeStyle(stream, element):
@@ -136,6 +161,44 @@ def gcodeRapid(stream, comment, X = None, Y = None, Z = None, F = None ):
 
 def gcodeLinear(stream, comment, X = None, Y = None, Z = None, F = None ):
     stream.code(code='G01', X=X, Y=Y, Z=Z, F=F, comment=comment)
+
+def cspToPolylines(stream, path, gcodeStyle):
+    zones = []
+    polyline = None
+    for command in path:
+        letter = command.letter
+        stream.comment(f'svg path command:"{command}"')
+        if letter == 'M':
+            polyline = []
+            p0 = transform.apply_to_point((command.args[0], command.args[1]))
+            pInitial = p0
+            if needSafeHeight:
+                gcodeSafeHeight(stream, gcodeStyle)
+            gcodeRapid(stream, 'rapid to start of curve', X=p0[0], Y=p0[1], F=60)
+            gcodeLinear(stream, 'plunge to start depth', Z=startDepth, F=gcodeStyle.feedz)
+            needSafeHeight = True
+        if letter == 'C':
+            args = command.args
+            p1 = transform.apply_to_point((args[0], args[1]))
+            p2 = transform.apply_to_point((args[2], args[3]))
+            p3 = transform.apply_to_point((args[4], args[5]))
+            t = 0
+            while t < 1.0:
+                bez = [p0,p1,p2,p3]
+                pt = bezier.bezierpointatt(bez, t)
+                gcodeLinear(stream.indent(), comment=f'interpolated cubic spline at t:{t}', X=pt[0], Y=pt[1], F=gcodeStyle.feedxy)
+                t += gcodeStyle.curveIncrement
+            gcodeLinear(stream, comment=f'interpolated cubic spline at final t:1.0', X=p3[0], Y=p3[1], F=gcodeStyle.feedxy)
+            p0 = p3
+            needSafeHeight = True
+        if letter == 'L':
+            p0 = transform.apply_to_point((command.args[0], command.args[1]))
+            gcodeLinear(stream, f'line', X=p0[0], Y=p0[1], F=gcodeStyle.feedxy)
+            needSafeHeight = True
+        if letter == 'Z':
+            p0 = pInitial
+            gcodeLinear(stream, f'zone close', X=p0[0], Y=p0[1], F=gcodeStyle.feedxy)
+            needSafeHeight = False
 
 def cutPathAtDepth(stream, path, gcodeStyle, transform, startDepth, finalDepth, needSafeHeight):
     p0 = None
@@ -181,6 +244,10 @@ def cutPathAtDepth(stream, path, gcodeStyle, transform, startDepth, finalDepth, 
 def gcodePath(stream, gcodeStyle, path, transform):
     stream.comment(f'path commands:')
     stream.comment(f'path:{path}')
+
+    if not gcodeStyle.depth:
+        stream.comment("Depth is 0. Skipping path")
+        return
 
     csp = CubicSuperPath(path).to_path()
     stream.comment(f'cubicsuperpath parsed:{csp} type:{type(csp).__name__}')
@@ -256,8 +323,9 @@ def exportTspan(stream, element, transform):
 
 def exportLayer(stream, element, transform):
     gcodeStyle = getElementGcodeStyle(stream, element)
-    for child in element.iterchildren():
+    for child in reversed(list(element.iterchildren())):
         visitElement(stream.indent(), child, transform)
+    gcodeSafeHeight(stream, gcodeStyle)
 
 elementExportFunctions = {
     'Layer': exportLayer,
@@ -270,13 +338,14 @@ elementExportFunctions = {
 }
 
 def getElementNamespace(elem):
-    return elem.nsmap[elem.prefix]
+    return elem.nsmap.get(elem.prefix, None)
 
 def getElementFullTagname(elem):
     return (getElementNamespace(elem), elem.TAG)
 
 def visitElement(stream, elem, transform):
-    stream.comment(f'{getElementNamespace(elem)}:{elem.TAG} => {type(elem).__name__}')
+    stream.comment(f'{getElementNamespace(elem)}:{elem.TAG} => {type(elem).__name__} {elem.get_id()} {elem.label}')
+    # stream.indent().comment(f'dir: {elem.__dir__()}')
     fn = elementExportFunctions.get(type(elem).__name__, exportIgnore)
     fn(stream.indent(), elem, transform)
 
@@ -299,7 +368,6 @@ class ExportCncGcode(inkex.OutputExtension):
         stream.comment(f'self: {self.__dir__()}')
 
         bbox = self.svg.get_page_bbox()
-        gcodeStyle = getDocumentGcodeStyle(stream, self.svg)
         gcodeTransform = (transforms.Transform(f'translate({bbox.left}, {bbox.bottom})')
                           .__mul__(transforms.Transform('scale(1,-1)')))
 
@@ -310,8 +378,6 @@ class ExportCncGcode(inkex.OutputExtension):
         for elem in self.svg.iterchildren():
             visitElement(stream.indent(), elem, gcodeTransform)
 
-
-        gcodeSafeHeight(stream, gcodeStyle)
         stream.code(code='M02', comment='end of program')
 
 if __name__ == '__main__':
