@@ -10,6 +10,7 @@ Export cnc gcode (.gcode)
 # import cubicsuperpath
 import inkex
 import json
+import math
 import os
 import re
 from inkex import bezier, Group, CubicSuperPath, ShapeElement, ColorIdError, ColorError, transforms, elements, Style
@@ -44,6 +45,48 @@ class GcodeExporter:
 
     def indent(self):
         return GcodeExporter(self.stream, self.document, self.depth + 2)
+
+def segmentLength(p0, p1, stream = None):
+    a = p1[0] - p0[0]
+    b = p1[1] - p0[1]
+    asq = a * a
+    bsq = b * b
+    result = math.sqrt(asq + bsq)
+    if stream:
+        stream.comment(f'segmentLength: p0:{p0} p1:{p1} a:{a} b:{b} asq:{asq} bsq:{bsq} result:{result}')
+    return result
+
+assert 10 == segmentLength((0,0), (10,0))
+assert 10 == segmentLength((10,0), (0,0))
+assert 10 == segmentLength((0,0), (0,10))
+assert 10 == segmentLength((0,10), (0,0))
+assert 5 == segmentLength((0,0), (3,4))
+assert 5 == segmentLength((0,0), (4,3))
+assert 5 == segmentLength((3,4), (0,0))
+assert 5 == segmentLength((4,3), (0,0))
+
+class Polyline:
+    def __init__(self, points = None, closed = False):
+        self.points = points or list()
+        self.closed = closed
+
+    def getLength(self):
+        if len(self.points):
+            result = 0
+            p0 = self.points[0]
+            for p1 in self.points[1:]:
+                result = result + segmentLength(p0,p1)
+                p0 = p1
+            return result
+        else:
+            return 0
+
+class Zones:
+    def __init__(self, polylines = None):
+        self.polylines = polylines or list()
+
+    def getLength(self):
+        return sum([polyline.getLength() for polyline in self.polylines])
 
 def getDescription(element):
     for child in element.iterchildren():
@@ -162,21 +205,19 @@ def gcodeRapid(stream, comment, X = None, Y = None, Z = None, F = None ):
 def gcodeLinear(stream, comment, X = None, Y = None, Z = None, F = None ):
     stream.code(code='G01', X=X, Y=Y, Z=Z, F=F, comment=comment)
 
-def cspToPolylines(stream, path, gcodeStyle):
-    zones = []
+def cspToZones(stream, path, gcodeStyle, transform):
+    zones = Zones()
+    stream.comment(f'cspToZones: len(zones.polylines):{len(zones.polylines)}')
     polyline = None
     for command in path:
         letter = command.letter
-        stream.comment(f'svg path command:"{command}"')
+        stream.comment(f'svg path command:"{command}" len(zones.polylines):{len(zones.polylines)}')
         if letter == 'M':
-            polyline = []
+            polyline = Polyline()
+            zones.polylines.append(polyline)
             p0 = transform.apply_to_point((command.args[0], command.args[1]))
+            polyline.points.append(p0)
             pInitial = p0
-            if needSafeHeight:
-                gcodeSafeHeight(stream, gcodeStyle)
-            gcodeRapid(stream, 'rapid to start of curve', X=p0[0], Y=p0[1], F=60)
-            gcodeLinear(stream, 'plunge to start depth', Z=startDepth, F=gcodeStyle.feedz)
-            needSafeHeight = True
         if letter == 'C':
             args = command.args
             p1 = transform.apply_to_point((args[0], args[1]))
@@ -186,26 +227,57 @@ def cspToPolylines(stream, path, gcodeStyle):
             while t < 1.0:
                 bez = [p0,p1,p2,p3]
                 pt = bezier.bezierpointatt(bez, t)
-                gcodeLinear(stream.indent(), comment=f'interpolated cubic spline at t:{t}', X=pt[0], Y=pt[1], F=gcodeStyle.feedxy)
+                polyline.points.append(pt)
                 t += gcodeStyle.curveIncrement
-            gcodeLinear(stream, comment=f'interpolated cubic spline at final t:1.0', X=p3[0], Y=p3[1], F=gcodeStyle.feedxy)
+            polyline.points.append(p3)
+            polyline.closed = False
             p0 = p3
-            needSafeHeight = True
         if letter == 'L':
             p0 = transform.apply_to_point((command.args[0], command.args[1]))
-            gcodeLinear(stream, f'line', X=p0[0], Y=p0[1], F=gcodeStyle.feedxy)
-            needSafeHeight = True
+            polyline.points.append(p0)
+            polyline.closed = False
         if letter == 'Z':
-            p0 = pInitial
-            gcodeLinear(stream, f'zone close', X=p0[0], Y=p0[1], F=gcodeStyle.feedxy)
-            needSafeHeight = False
+            polyline.points.append(pInitial)
+            polyline.closed = True
+    return zones
+
+def cutPolylineAtDepth(stream, polyline, gcodeStyle, startDepth, finalDepth, needSafeHeight):
+    if not len(polyline.points):
+        return
+    l = 0
+    totalL = polyline.getLength()
+    depthRange = finalDepth - startDepth
+    d = startDepth
+
+    p0 = polyline.points[0]
+    stream.comment(f'cutting polyline ramp: {startDepth} -> {finalDepth}')
+    if needSafeHeight:
+        gcodeSafeHeight(stream, gcodeStyle)
+    gcodeRapid(stream, 'rapid to start of curve', X=p0[0], Y=p0[1], F=gcodeStyle.rapidxy)
+    gcodeLinear(stream, 'plunge to start depth', Z=d, F = gcodeStyle.feedz)
+    for p1 in polyline.points[1:]:
+        segmentL = segmentLength(p0,p1)
+        l = l + segmentL
+        lFraction = l / totalL
+        d = startDepth + lFraction * depthRange # interpolate depth at p1
+        gcodeLinear(stream, f'lFraction:{lFraction}', X=p1[0], Y=p1[1], Z=d, F=gcodeStyle.feedxy)
+        p0 = p1
+    return not polyline.closed
 
 def cutPathAtDepth(stream, path, gcodeStyle, transform, startDepth, finalDepth, needSafeHeight):
     p0 = None
     pInitial = None
-    stream.comment(f'carving path from startDepth:{startDepth} to finalDepth:{finalDepth} [note: ramp not yet supported]')
+    stream.comment(f'carving path from startDepth:{startDepth} to finalDepth:{finalDepth}')
     stream = stream.indent()
 
+    zones = cspToZones(stream, path, gcodeStyle, transform)
+
+    needSafeHeight = True
+    for polyline in zones.polylines:
+        needSafeHeight = needSafeHeight and cutPolylineAtDepth(stream, polyline, gcodeStyle, startDepth, finalDepth, needSafeHeight)
+    return needSafeHeight
+
+def deadCode():
     for command in path:
         letter = command.letter
         stream.comment(f'svg path command:"{command}"')
@@ -277,8 +349,7 @@ def gcodePath(stream, gcodeStyle, path, transform):
             nextDepth = gcodeStyle.depth
         needSafeHeight = cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform, -depth, -nextDepth, needSafeHeight )
         depth = nextDepth
-    if depth != gcodeStyle.depthIncrement:
-        cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform, -gcodeStyle.depth, -gcodeStyle.depth, needSafeHeight)
+    cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform, -gcodeStyle.depth, -gcodeStyle.depth, needSafeHeight)
 
 def exportEllipse(stream, element, transform):
     gcodeStyle = getElementGcodeStyle(stream, element)
