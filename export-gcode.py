@@ -139,6 +139,7 @@ def distance(value, defaultValue = None, stream = None):
 class GcodeStyle:
     def __init__(self, style, stream=None):
         self.depth = distance(style.get("x-gcode-depth", None), 0)
+        self.startDepth = distance(style.get("x-gcode-start-depth", None), 0)
         self.depthIncrement = distance(style.get("x-gcode-depth-increment", None), mmFromInch(0.1))
         if self.depthIncrement < 0:
             self.depthIncrement = 0.1
@@ -345,6 +346,7 @@ def cutPathAtDepth(stream, path, gcodeStyle, transform, startDepth, finalDepth, 
     zones = cspToZones(stream, path, gcodeStyle, transform)
 
     for polyline in zones.polylines:
+        needSafeHeight = True
         needSafeHeight = cutPolylineAtDepth(stream, polyline, gcodeStyle,
                                             startDepth, finalDepth, needSafeHeight) and needSafeHeight
     stream.comment(f'cutPathAtDepth returning needSafeHeight:{needSafeHeight}')
@@ -378,16 +380,16 @@ def gcodePath(stream, gcodeStyle, path, transform):
 
     stream.comment(f'shape offset range: [{startOffset}, {finalOffset}, {offsetStep}]')
 
-    depth = 0
+    depth = gcodeStyle.startDepth
     needSafeHeight = True
     while depth < gcodeStyle.depth:
         nextDepth = depth + gcodeStyle.depthIncrement
         if nextDepth > gcodeStyle.depth:
             nextDepth = gcodeStyle.depth
-        needSafeHeight = cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform, -depth, -nextDepth, needSafeHeight)
+        needSafeHeight = cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform, -depth, -nextDepth, True) #needSafeHeight)
         depth = nextDepth
     cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform,
-                   -gcodeStyle.depth, -gcodeStyle.depth, needSafeHeight)
+                   -gcodeStyle.depth, -gcodeStyle.depth, True) # needSafeHeight)
 
 def exportEllipse(stream, element, transform):
     gcodeStyle = getElementGcodeStyle(stream, element)
