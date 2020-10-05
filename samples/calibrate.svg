@@ -30,9 +30,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.80996074"
-     inkscape:cx="181.88273"
-     inkscape:cy="548.56717"
+     inkscape:zoom="1.2342439"
+     inkscape:cx="388.41484"
+     inkscape:cy="572.5709"
      inkscape:document-units="in"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -45,9 +45,9 @@
      fit-margin-right="1"
      fit-margin-bottom="1"
      inkscape:window-width="2560"
-     inkscape:window-height="1317"
+     inkscape:window-height="1415"
      inkscape:window-x="0"
-     inkscape:window-y="23"
+     inkscape:window-y="25"
      inkscape:window-maximized="0"
      inkscape:snap-grids="false"
      inkscape:snap-to-guides="true"
@@ -73,32 +73,13 @@
      transform="translate(146.34455,94.078639)">
     <g
        id="g1541"
-       style="x-gcode-depth:0.8;fill:#ff0000;x-gcode-edge-mode:outside">
+       style="fill:none; x-gcode-depth:0.78in; x-gcode-depthIncrement:0.25in; x-gcode-edge-mode:outside; x-gcode-tab-width:0.5in; x-gcode-tab-height:0.25in; x-gcode-tab-start-interval:3in; stroke-width:3.17500016; stroke-miterlimit:4; stroke-dasharray:none; stroke:#000000; stroke-opacity:1">
       <path
          id="rect1451"
-         d="M -120.94455,-68.678638 V 185.32138 H 133.05547 V -68.678638 Z"
-         sodipodi:nodetypes="cccccc"
+         d="M 133.05547,185.32138 H -120.94455 V -68.678638 C -0.71353143,-24.263085 86.548449,57.466263 133.05547,185.32138 Z"
+         sodipodi:nodetypes="cccc"
          x-gcode-depth="0.25"
-         style="fill:#ff0000" />
-    </g>
-    <g
-       id="g1585"
-       transform="matrix(1.0098375,0,0,0.47958563,-192.64141,-35.292431)"
-       style="x-gcode-curve-increment:0.05">
-      <ellipse
-         style="fill:none;stroke:#000000;stroke-width:2.54;stroke-linejoin:bevel;stroke-miterlimit:0.25"
-         id="path1579"
-         cx="206.77701"
-         cy="83.13546"
-         rx="55.859192"
-         ry="57.32917" />
-      <rect
-         style="fill:none;stroke:#000000;stroke-width:2.54;stroke-linejoin:bevel;stroke-miterlimit:0.25"
-         id="rect1581"
-         width="58.472488"
-         height="72.192284"
-         x="184.23732"
-         y="-13.719804" />
+         style="fill:none;stroke:#000000;stroke-width:3.175;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     </g>
   </g>
 </svg>

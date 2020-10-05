@@ -106,64 +106,74 @@ def mmFromInch(value):
 def isNumber(value):
     return isinstance(value, (int, float, complex)) and not isinstance(value, bool)
 
-distanceRegex = re.compile('(([0-9]*(\.[0-9]*))(/([0-9]*(\.[0-9]*)))?)(px|in|mm|cm|Q|pc|pt)?')
+distanceRegex = re.compile('(([0-9]*(\.[0-9]*)?)(/([0-9]*(\.[0-9]*)?))?)(px|in|mm|cm|Q|pc|pt)?')
 unitFactors = { 'in': 25.4, 'px': 25.4 / 96.0, 'cm': 1.0/100.0, 'mm': 1.0, 'Q': 40.0/100.0, 'pc': 25.4/6.0, 'pt': 25.4/72.0 }
-def distance(stream, value, defaultValue = None):
+assert distanceRegex.match('3in')
+assert distanceRegex.match('.3in')
+assert distanceRegex.match('1/2in')
+
+def distance(value, defaultValue = None, stream = None):
     if isNumber(value):
         return value
-    if value is None:
-        return defaultValue
-    match = distanceRegex.match(value)
-    if match is None:
-        return defaultValue
+    scaledValue = defaultValue
+    unitValue = None
+    unit = None
+    if not value is None:
+        match = distanceRegex.match(value)
+        if not match is None:
+            numerator = float(match.group(2))
+            denominator = match.group(5)
+            if denominator is None:
+                denominator = 1.0
+            else:
+                denominator = float(denominator)
+            unit = match.group(7) or 'mm'
+            unitFactor = unitFactors.get(unit, 'mm')
 
-    # stream.comment(f"distance: {value} {defaultValue} 0:{match.group(0)} 1:{match.group(1)} 2:{match.group(2)} 3:{match.group(3)} 4:{match.group(4)} 5:{match.group(5)} 6:{match.group(6)} 7:{match.group(7)}")
-    numerator = float(match.group(2))
-    denominator = match.group(5)
-    if denominator is None:
-        denominator = 1.0
-    else:
-        denominator = float(denominator)
-    unit = match.group(7) or 'mm'
-    unitFactor = unitFactors.get(unit, 'mm')
-
-    unitValue = numerator / denominator
-    scaledValue = unitValue * unitFactor
-    stream.comment(f"distance: {value} {unitValue}{unit} {scaledValue}mm")
+            unitValue = numerator / denominator
+            scaledValue = unitValue * unitFactor
+    if stream:
+        stream.comment(f"distance: \"{value}\" {unitValue}{unit} {scaledValue}mm")
     return scaledValue
 
 class GcodeStyle:
-    def __init__(self, stream, style):
-        self.depth = distance(stream, style.get("x-gcode-depth", None), 0)
-        self.depthIncrement = distance(stream, style.get("x-gcode-depth-increment", None), mmFromInch(0.1))
+    def __init__(self, style, stream=None):
+        self.depth = distance(style.get("x-gcode-depth", None), 0)
+        self.depthIncrement = distance(style.get("x-gcode-depth-increment", None), mmFromInch(0.1))
         if self.depthIncrement < 0:
             self.depthIncrement = 0.1
         if self.depthIncrement > self.depth:
             self.depthIncrement = self.depth
 
+        self.tabHeight = distance(style.get("x-gcode-tab-height", 0), None)
+        self.tabWidth = distance(style.get("x-gcode-tab-width", None), None)
+        self.tabStartInterval = distance(style.get("x-gcode-tab-start-interval", None), None)
+        self.tabDepth = self.depth - self.tabHeight
+
         self.tool = style.get("x-gcode-tool", 'default')
-        self.toolDiameter = distance(stream, style.get(f"x-gcode-tool-{self.tool}-diameter", mmFromInch(0.25)))
-        self.toolStepOver = distance(stream, style.get(f"x-gcode-tool-{self.tool}-stepover", self.toolDiameter * 0.8 ))
-        self.stepOver = distance(stream, style.get("x-gcode-stepover", self.toolStepOver))
+        self.toolDiameter = distance(style.get(f"x-gcode-tool-{self.tool}-diameter", mmFromInch(0.25)))
+        self.toolStepOver = distance(style.get(f"x-gcode-tool-{self.tool}-stepover", self.toolDiameter * 0.8 ))
+        self.stepOver = distance(style.get("x-gcode-stepover", self.toolStepOver))
 
         # Todo: switch from curveIncrement to maxCurveSegmentLength
-        self.curveIncrement = distance(stream, style.get("x-gcode-curve-increment", None), 0.1)
+        self.curveIncrement = distance(style.get("x-gcode-curve-increment", None), 0.1)
         if self.curveIncrement < 0 or self.curveIncrement > 1:
             self.curveIncrement = 0.1
         self.edgeMode = style.get("x-gcode-edge-mode", 'center')
         self.fillMode = style.get("x-gcode-fill-mode", '')
 
-        self.feedxy = distance(stream, style.get("x-gcode-feed-xy", None), mmFromInch(25))
-        self.feedz = distance(stream, style.get("x-gcode-feed-z", None), mmFromInch(10))
+        self.feedxy = distance(style.get("x-gcode-feed-xy", None), mmFromInch(25))
+        self.feedz = distance(style.get("x-gcode-feed-z", None), mmFromInch(10))
 
-        self.rapidxy = distance(stream, style.get("x-gcode-rapid-xy", None), mmFromInch(60))
-        self.rapidz = distance(stream, style.get("x-gcode-rapid-z", None), mmFromInch(60))
+        self.rapidxy = distance(style.get("x-gcode-rapid-xy", None), mmFromInch(60))
+        self.rapidz = distance(style.get("x-gcode-rapid-z", None), mmFromInch(60))
         self.supportsCubicSpline = False
         self.safeHeight = mmFromInch(0.25)
 
+
 def getGcodeStyle(stream, style):
     stream.comment(f'SvgStyle: {style}')
-    result = GcodeStyle(stream, style)
+    result = GcodeStyle(style, stream=stream)
     stream.comment(f'GcodeStyle: {json.dumps(result.__dict__)}')
     return result
 
@@ -241,76 +251,103 @@ def cspToZones(stream, path, gcodeStyle, transform):
             polyline.closed = True
     return zones
 
+def hasTabs(gcodeStyle):
+    return gcodeStyle.tabHeight and gcodeStyle.tabWidth and gcodeStyle.tabStartInterval
+
 def cutPolylineAtDepth(stream, polyline, gcodeStyle, startDepth, finalDepth, needSafeHeight):
     if not len(polyline.points):
         return
-    l = 0
     totalL = polyline.getLength()
     depthRange = finalDepth - startDepth
-    d = startDepth
 
     p0 = polyline.points[0]
-    stream.comment(f'cutting polyline ramp: {startDepth} -> {finalDepth}')
+    l = 0
+    d = startDepth
+
+    tabStart = totalL + 1
+    tabEnd = totalL + 1
+    tabDepth = gcodeStyle.tabDepth
+    inTab = False
+    useTabs = hasTabs(gcodeStyle)
+    if useTabs:
+        tabStart = gcodeStyle.tabStartInterval
+        tabEnd = tabStart + gcodeStyle.tabWidth
+
+    stream.comment(f'cutting polyline ramp: {startDepth} -> {finalDepth} needSafeHeight:{needSafeHeight}')
     if needSafeHeight:
         gcodeSafeHeight(stream, gcodeStyle)
     gcodeRapid(stream, 'rapid to start of curve', X=p0[0], Y=p0[1], F=gcodeStyle.rapidxy)
     gcodeLinear(stream, 'plunge to start depth', Z=d, F = gcodeStyle.feedz)
+
     for p1 in polyline.points[1:]:
         segmentL = segmentLength(p0,p1)
-        l = l + segmentL
-        lFraction = l / totalL
+        startL = l
+        endL = l + segmentL
+        lFraction = endL / totalL
         d = startDepth + lFraction * depthRange # interpolate depth at p1
-        gcodeLinear(stream, f'lFraction:{lFraction}', X=p1[0], Y=p1[1], Z=d, F=gcodeStyle.feedxy)
+
+        while not inTab and (tabStart < startL):
+            tabStart += gcodeStyle.tabStartInterval
+            tabEnd = tabStart + gcodeStyle.tabWidth
+
+        finishedSegment = False
+        stream.comment(f'segment. startL:{startL} endL:{endL} next tab:{tabStart}-{tabEnd} inTab:{inTab}')
+        while not finishedSegment:
+            if not inTab:
+                if endL < tabStart or d > -tabDepth:
+                    # either segment ends before tab, or whole segment is above tab
+                    # NOTE: this presumes we only ramp *down*.
+                    gcodeLinear(stream, f'lFraction:{lFraction} d:{d} tabDepth:{-tabDepth}', X=p1[0], Y=p1[1], Z=d, F=gcodeStyle.feedxy)
+                    l = startL
+                    finishedSegment = True
+                else: # tab starts in this line segment
+                    tabStartLFraction = tabStart / totalL
+                    tabStartRampDepth = startDepth + tabStartLFraction * depthRange
+                    tabSegmentFraction = (tabStart - startL) / (endL - startL)
+
+                    # figure out x,y of tab start
+                    tabStartPoint = (p0[0] + tabSegmentFraction*(p1[0]-p0[0]),
+                                     p0[1] + tabSegmentFraction*(p1[1]-p0[1]))
+                    gcodeLinear(stream, f'ramp to tab start', X=tabStartPoint[0], Y=tabStartPoint[1],
+                                Z=tabStartRampDepth, F=gcodeStyle.feedxy)
+                    gcodeLinear(stream, f'lift to tab depth', Z=-tabDepth, F=gcodeStyle.rapidz)
+                    inTab = True
+
+            if inTab:
+                if tabEnd < endL:
+                    tabStopLFraction = tabEnd / totalL
+                    tabStopRampDepth = startDepth + tabStartLFraction * depthRange
+                    tabSegmentFraction = (tabEnd - startL) / (endL - startL)
+
+                    tabEndPoint = (p0[0] + tabSegmentFraction*(p1[0]-p0[0]),
+                                   p0[1] + tabSegmentFraction*(p1[1]-p0[1]))
+
+                    gcodeLinear(stream, f'skim tab top tabStop:{tabStopLFraction}', X=tabEndPoint[0],Y=tabEndPoint[1], F=gcodeStyle.feedxy)
+                    gcodeLinear(stream, f'plunge to post-tab ramp top', Z=tabStopRampDepth, F=gcodeStyle.feedz)
+                    tabStart = tabStart + gcodeStyle.tabStartInterval
+                    tabEnd = tabStart + gcodeStyle.tabWidth
+                    inTab = False
+                else:
+                    gcodeLinear(stream, f'skim tab top endL:{endL} tabEnd:{tabEnd}', X=p1[0],Y=p1[1], F=gcodeStyle.feedxy)
+                    finishedSegment = True
+            l = endL
+            stream.comment(f'segmentFinished: {finishedSegment}')
         p0 = p1
+    stream.comment(f'polyline.closed: {polyline.closed}')
     return not polyline.closed
 
 def cutPathAtDepth(stream, path, gcodeStyle, transform, startDepth, finalDepth, needSafeHeight):
     p0 = None
     pInitial = None
-    stream.comment(f'carving path from startDepth:{startDepth} to finalDepth:{finalDepth}')
+    stream.comment(f'carving path from startDepth:{startDepth} to finalDepth:{finalDepth} needSafeHeight:{needSafeHeight}')
     stream = stream.indent()
 
     zones = cspToZones(stream, path, gcodeStyle, transform)
 
-    needSafeHeight = True
     for polyline in zones.polylines:
-        needSafeHeight = needSafeHeight and cutPolylineAtDepth(stream, polyline, gcodeStyle, startDepth, finalDepth, needSafeHeight)
-    return needSafeHeight
-
-def deadCode():
-    for command in path:
-        letter = command.letter
-        stream.comment(f'svg path command:"{command}"')
-        if letter == 'M':
-            p0 = transform.apply_to_point((command.args[0], command.args[1]))
-            pInitial = p0
-            if needSafeHeight:
-                gcodeSafeHeight(stream, gcodeStyle)
-            gcodeRapid(stream, 'rapid to start of curve', X=p0[0], Y=p0[1], F=60)
-            gcodeLinear(stream, 'plunge to start depth', Z=startDepth, F=gcodeStyle.feedz)
-            needSafeHeight = True
-        if letter == 'C':
-            args = command.args
-            p1 = transform.apply_to_point((args[0], args[1]))
-            p2 = transform.apply_to_point((args[2], args[3]))
-            p3 = transform.apply_to_point((args[4], args[5]))
-            t = 0
-            while t < 1.0:
-                bez = [p0,p1,p2,p3]
-                pt = bezier.bezierpointatt(bez, t)
-                gcodeLinear(stream.indent(), comment=f'interpolated cubic spline at t:{t}', X=pt[0], Y=pt[1], F=gcodeStyle.feedxy)
-                t += gcodeStyle.curveIncrement
-            gcodeLinear(stream, comment=f'interpolated cubic spline at final t:1.0', X=p3[0], Y=p3[1], F=gcodeStyle.feedxy)
-            p0 = p3
-            needSafeHeight = True
-        if letter == 'L':
-            p0 = transform.apply_to_point((command.args[0], command.args[1]))
-            gcodeLinear(stream, f'line', X=p0[0], Y=p0[1], F=gcodeStyle.feedxy)
-            needSafeHeight = True
-        if letter == 'Z':
-            p0 = pInitial
-            gcodeLinear(stream, f'zone close', X=p0[0], Y=p0[1], F=gcodeStyle.feedxy)
-            needSafeHeight = False
+        needSafeHeight = cutPolylineAtDepth(stream, polyline, gcodeStyle,
+                                            startDepth, finalDepth, needSafeHeight) and needSafeHeight
+    stream.comment(f'cutPathAtDepth returning needSafeHeight:{needSafeHeight}')
     return needSafeHeight
 
 def gcodePath(stream, gcodeStyle, path, transform):
@@ -347,9 +384,10 @@ def gcodePath(stream, gcodeStyle, path, transform):
         nextDepth = depth + gcodeStyle.depthIncrement
         if nextDepth > gcodeStyle.depth:
             nextDepth = gcodeStyle.depth
-        needSafeHeight = cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform, -depth, -nextDepth, needSafeHeight )
+        needSafeHeight = cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform, -depth, -nextDepth, needSafeHeight)
         depth = nextDepth
-    cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform, -gcodeStyle.depth, -gcodeStyle.depth, needSafeHeight)
+    cutPathAtDepth(stream.indent(), csp, gcodeStyle, transform,
+                   -gcodeStyle.depth, -gcodeStyle.depth, needSafeHeight)
 
 def exportEllipse(stream, element, transform):
     gcodeStyle = getElementGcodeStyle(stream, element)
