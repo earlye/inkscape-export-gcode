@@ -138,35 +138,35 @@ def distance(value, defaultValue = None, stream = None):
 
 class GcodeStyle:
     def __init__(self, style, stream=None):
-        self.depth = distance(style.get("x-gcode-depth", None), 0)
-        self.depthIncrement = distance(style.get("x-gcode-depth-increment", None), mmFromInch(0.1))
+        self.depth = distance(style.get("-xgcode-depth", None), 0)
+        self.depthIncrement = distance(style.get("-xgcode-depth-increment", None), mmFromInch(0.1))
         if self.depthIncrement < 0:
             self.depthIncrement = 0.1
         if self.depthIncrement > self.depth:
             self.depthIncrement = self.depth
 
-        self.tabHeight = distance(style.get("x-gcode-tab-height", 0), None)
-        self.tabWidth = distance(style.get("x-gcode-tab-width", None), None)
-        self.tabStartInterval = distance(style.get("x-gcode-tab-start-interval", None), None)
+        self.tabHeight = distance(style.get("-xgcode-tab-height", 0), None)
+        self.tabWidth = distance(style.get("-xgcode-tab-width", None), None)
+        self.tabStartInterval = distance(style.get("-xgcode-tab-start-interval", None), None)
         self.tabDepth = self.depth - self.tabHeight
 
-        self.tool = style.get("x-gcode-tool", 'default')
-        self.toolDiameter = distance(style.get(f"x-gcode-tool-{self.tool}-diameter", mmFromInch(0.25)))
-        self.toolStepOver = distance(style.get(f"x-gcode-tool-{self.tool}-stepover", self.toolDiameter * 0.8 ))
-        self.stepOver = distance(style.get("x-gcode-stepover", self.toolStepOver))
+        self.tool = style.get("-xgcode-tool", 'default')
+        self.toolDiameter = distance(style.get(f"-xgcode-tool-{self.tool}-diameter", mmFromInch(0.25)))
+        self.toolStepOver = distance(style.get(f"-xgcode-tool-{self.tool}-stepover", self.toolDiameter * 0.8 ))
+        self.stepOver = distance(style.get("-xgcode-stepover", self.toolStepOver))
 
         # Todo: switch from curveIncrement to maxCurveSegmentLength
-        self.curveIncrement = distance(style.get("x-gcode-curve-increment", None), 0.1)
+        self.curveIncrement = distance(style.get("-xgcode-curve-increment", None), 0.1)
         if self.curveIncrement < 0 or self.curveIncrement > 1:
             self.curveIncrement = 0.1
-        self.edgeMode = style.get("x-gcode-edge-mode", 'center')
-        self.fillMode = style.get("x-gcode-fill-mode", '')
+        self.edgeMode = style.get("-xgcode-edge-mode", 'center')
+        self.fillMode = style.get("-xgcode-fill-mode", '')
 
-        self.feedxy = distance(style.get("x-gcode-feed-xy", None), mmFromInch(25))
-        self.feedz = distance(style.get("x-gcode-feed-z", None), mmFromInch(10))
+        self.feedxy = distance(style.get("-xgcode-feed-xy", None), mmFromInch(25))
+        self.feedz = distance(style.get("-xgcode-feed-z", None), mmFromInch(10))
 
-        self.rapidxy = distance(style.get("x-gcode-rapid-xy", None), mmFromInch(60))
-        self.rapidz = distance(style.get("x-gcode-rapid-z", None), mmFromInch(60))
+        self.rapidxy = distance(style.get("-xgcode-rapid-xy", None), mmFromInch(60))
+        self.rapidz = distance(style.get("-xgcode-rapid-z", None), mmFromInch(60))
         self.supportsCubicSpline = False
         self.safeHeight = mmFromInch(0.25)
 
@@ -291,7 +291,6 @@ def cutPolylineAtDepth(stream, polyline, gcodeStyle, startDepth, finalDepth, nee
             tabEnd = tabStart + gcodeStyle.tabWidth
 
         finishedSegment = False
-        stream.comment(f'segment. startL:{startL} endL:{endL} next tab:{tabStart}-{tabEnd} inTab:{inTab}')
         while not finishedSegment:
             if not inTab:
                 if endL < tabStart or d > -tabDepth:
@@ -331,7 +330,6 @@ def cutPolylineAtDepth(stream, polyline, gcodeStyle, startDepth, finalDepth, nee
                     gcodeLinear(stream, f'skim tab top endL:{endL} tabEnd:{tabEnd}', X=p1[0],Y=p1[1], F=gcodeStyle.feedxy)
                     finishedSegment = True
             l = endL
-            stream.comment(f'segmentFinished: {finishedSegment}')
         p0 = p1
     stream.comment(f'polyline.closed: {polyline.closed}')
     return not polyline.closed
@@ -344,9 +342,15 @@ def cutPathAtDepth(stream, path, gcodeStyle, transform, startDepth, finalDepth, 
 
     zones = cspToZones(stream, path, gcodeStyle, transform)
 
-    for polyline in zones.polylines:
-        needSafeHeight = cutPolylineAtDepth(stream, polyline, gcodeStyle,
-                                            startDepth, finalDepth, needSafeHeight) and needSafeHeight
+    if gcodeStyle.fillMode == 'None':
+        for polyline in zones.polylines:
+            needSafeHeight = cutPolylineAtDepth(stream, polyline, gcodeStyle,
+                                                startDepth, finalDepth, needSafeHeight) and needSafeHeight
+    elif gcodeStyle.fillMode == 'spiral':
+        for polyline in zones.polylines:
+            needSafeHeight = cutPolylineAtDepth(stream, polyline, gcodeStyle,
+                                                finalDepth, finalDepth, needSafeHeight) and needSafeHeight
+
     stream.comment(f'cutPathAtDepth returning needSafeHeight:{needSafeHeight}')
     return needSafeHeight
 
@@ -371,10 +375,6 @@ def gcodePath(stream, gcodeStyle, path, transform):
     elif 'outside' == gcodeStyle.edgeMode:
         startOffset = gcodeStyle.toolDiameter * 0.5
         finalOffset = gcodeStyle.toolDiameter * 0.5
-
-    if 'spiral' == gcodeStyle.fillMode:
-        offsetStep = -gcodeStyle.toolStepOver
-        finalOffset = float('-inf')
 
     stream.comment(f'shape offset range: [{startOffset}, {finalOffset}, {offsetStep}]')
 

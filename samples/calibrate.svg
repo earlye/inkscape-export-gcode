@@ -73,13 +73,10 @@
      transform="translate(146.34455,94.078639)">
     <g
        id="g1541"
-       style="fill:none; x-gcode-depth:0.78in; x-gcode-depthIncrement:0.25in; x-gcode-edge-mode:outside; x-gcode-tab-width:0.5in; x-gcode-tab-height:0.25in; x-gcode-tab-start-interval:3in; stroke-width:3.17500016; stroke-miterlimit:4; stroke-dasharray:none; stroke:#000000; stroke-opacity:1">
-      <path
-         id="rect1451"
-         d="M 133.05547,185.32138 H -120.94455 V -68.678638 C -0.71353143,-24.263085 86.548449,57.466263 133.05547,185.32138 Z"
-         sodipodi:nodetypes="cccc"
-         x-gcode-depth="0.25"
-         style="fill:none;stroke:#000000;stroke-width:3.175;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
-    </g>
+       style="fill:#b3b3b3;-xgcode-depth:0.78000000000000003in;-xgcode-depthIncrement:0.25000000000000000in;-xgcode-edge-mode:outside;-xgcode-tab-width:0.50000000000000000in;-xgcode-tab-height:0.25000000000000000in;-xgcode-tab-start-interval:3in;stroke-width:3.17500016;stroke-miterlimit:4;stroke-dasharray:none;stroke:#000000;stroke-opacity:1" />
+    <path
+       id="path2937"
+       style="fill:#b3b3b3;fill-rule:evenodd;stroke:#000000;stroke-width:3.175;stroke-linecap:round;stroke-linejoin:round"
+       d="M 8.8584423,64.44706 A 40.622883,41.694729 0 0 1 -31.764441,106.14179 40.622883,41.694729 0 0 1 -72.387323,64.44706 40.622883,41.694729 0 0 1 -31.764441,22.752331 40.622883,41.694729 0 0 1 8.8584423,64.44706 Z M 133.05547,185.32138 H -120.94455 V -68.678638 C -0.71353143,-24.263085 86.548449,57.466263 133.05547,185.32138 Z" />
   </g>
 </svg>
