@@ -138,14 +138,9 @@ def distance(value, defaultValue = None, stream = None):
 
 class GcodeStyle:
     def __init__(self, style, stream=None):
-<<<<<<< HEAD
-        self.depth = distance(style.get("-xgcode-depth", None), 0)
-        self.depthIncrement = distance(style.get("-xgcode-depth-increment", None), mmFromInch(0.1))
-=======
-        self.depth = distance(style.get("x-gcode-depth", None), 0)
-        self.startDepth = distance(style.get("x-gcode-start-depth", None), 0)
-        self.depthIncrement = distance(style.get("x-gcode-depth-increment", None), mmFromInch(0.1))
->>>>>>> 484f05de0dab6dc80c202fc37cf353fa96ad27ab
+        self.depth = distance(style.get("-gcode-depth", None), 0)
+        self.startDepth = distance(style.get("-gcode-start-depth", None), 0)
+        self.depthIncrement = distance(style.get("-gcode-depth-increment", None), mmFromInch(0.1))
         if self.depthIncrement < 0:
             self.depthIncrement = 0.1
         if self.depthIncrement > self.depth:
