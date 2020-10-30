@@ -306,6 +306,10 @@ def pocket(stream, gcodeStyle, zones, transform):
                     # solving for x...
                     # (x-x0)/(y-y0) = (x1-x0)/(y1-y0)
                     # (x-x0) = (y-y0)(x1-x0)/(y1-y0)
+                    if y1 == y0:
+                        intersections.append(x0)
+                        intersections.append(x1)
+                        continue
                     x = (y-y0)*(x1-x0)/(y1-y0) + x0
                     intersections.append(x)
                     streamSegments.comment(f"p0:{p0} p1:{p1} x:{x} intersections:{intersections}")

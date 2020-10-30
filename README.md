@@ -88,14 +88,18 @@ This controls how the edge of the path is traced in gcode.
 
 *Not supported yet*
 The angle of the lines cut into the surface when 'hatch' is specified for -gcode-fill-mode
+Currently ignored: fill-angle is always '0'.
 
 ### -gcode-fill-mode
 * One of: none, hatch
 * Default: none
 * Reserved values for future: spiral
 
-*Not supported yet*
 This controls how the area of a path is filled in gcode.
+Only closed paths will actually be cut.
+
+none: Do not cut the area of the path, only cut the contour.
+hatch: Cut a pocket by tracing lines spaced by `-gcode-stepover`, at angle specified by `-gcode-fill-angle`
 
 ### -gcode-rapid-xy
 * Positive distance indicating how quickly to feed horizontally while at safe height
