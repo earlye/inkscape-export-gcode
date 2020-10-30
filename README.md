@@ -51,7 +51,7 @@ Editor in Inkscape (Edit => XML Editor)
 
 Extended CSS Styles for GCODE control:
 
-### -xgcode-curve-increment
+### -gcode-curve-increment
 * Value greater than 0 and less than 1.
 * Default: 0.1
 
@@ -61,76 +61,77 @@ the cost of longer gcode.
 
 We want to replace this with a tolerance or max-segment-length value.
 
-### -xgcode-depth
+### -gcode-depth
 * Value indicating depth of the entire path/pocket
 * Default: None (ignore path)
 
-### -xgcode-depth-increment
+### -gcode-depth-increment
 * Value indicates depth of cut
 * Default: 0.1in
-* Max: -xgcode-depth
+* Max: -gcode-depth
 
-### -xgcode-edge-mode
+### -gcode-edge-mode
 * One of: center, inside, outside, v-carve
 * Default: center
 
 *Not supported yet*
 This controls how the edge of the path is traced in gcode.
 
-### -xgcode-feed-xy
+### -gcode-feed-xy
 * Positive distance indicating how quickly to feed horizontally while cutting.
 
-### -xgcode-feed-z
+### -gcode-feed-z
 * Positive distance indicating how quickly to feed vertically while cutting.
 
-### -xgcode-fill-angle
+### -gcode-fill-angle
 * Angle in degrees
 
 *Not supported yet*
-The angle of the lines cut into the surface when 'hatch' is specified for -xgcode-fill-mode
+The angle of the lines cut into the surface when 'hatch' is specified for -gcode-fill-mode
 
-### -xgcode-fill-mode
-* One of: none, spiral, hatch
+### -gcode-fill-mode
+* One of: none, hatch
 * Default: none
+* Reserved values for future: spiral
 
 *Not supported yet*
 This controls how the area of a path is filled in gcode.
 
-### -xgcode-rapid-xy
+### -gcode-rapid-xy
 * Positive distance indicating how quickly to feed horizontally while at safe height
 
-### -xgcode-rapid-z
+### -gcode-rapid-z
 * Positive distance indicating how quickly to feed vertically while at or going to safe height
 
-### -xgcode-tab-height
+### -gcode-tab-height
 * Distance indicates how tall tabs should be
 * Default: None
 
-### -xgcode-tab-width
+### -gcode-tab-width
 * Distance indicates how wide tabs should be
 * Default: None
 
-### -xgcode-tab-start-interval
+### -gcode-tab-start-interval
 * Distance indicates how far apart tabs should be along perimeter
 * Default: None
 
-### -xgcode-tool
+### -gcode-tool
 * Reference to a def containing a tool
 * Default: ''
 
-### -xgcode-tool-{-xgcode-tool}-diameter
+### -gcode-tool-{-gcode-tool}-diameter
 * Positive distance
 * Default: 0.25
 
 Diameter of the tool.
 
-### -xgcode-tool-{-xgcode-tool}-stepover
+### -gcode-tool-{-gcode-tool}-stepover
 * Positive distance
 * Default: 0.25
 
 When filling using spiral, how much does this tool want to be stepped over?
 
-### -xgcode-stepover
+### -gcode-stepover
 * Positive distance
 * Default: 0.8 * tool diameter
 

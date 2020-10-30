@@ -1,3 +1,5 @@
 *.gcode
 sample-screenshots
 .*
+*~
+__pycache__
