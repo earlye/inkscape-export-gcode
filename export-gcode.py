@@ -291,24 +291,29 @@ def pocket(stream, gcodeStyle, zones, transform):
             for polyline in zones.polylines:
                 if not polyline.closed:
                     continue
-                p0 = polyline.points[0]
+                p0n = polyline.points[0]
+                streamSegments.comment(f"polyline:{polyline}")
                 for p1 in polyline.points[1:]:
+                    p0 = p0n
+                    p0n = p1
                     x0, y0 = p0[0], p0[1]
                     x1, y1 = p1[0], p1[1]
                     if (y1 > y0):
                         if (y < y0) or (y>y1):
                             continue
+                        pass
                     else:
                         if (y < y1) or (y>y0):
                             continue
+                        pass
                     # https://en.wikipedia.org/wiki/Linear_interpolation
                     # (y-y0)/(x-x0) = (y1-y0)/(x1-x0)
                     # solving for x...
                     # (x-x0)/(y-y0) = (x1-x0)/(y1-y0)
                     # (x-x0) = (y-y0)(x1-x0)/(y1-y0)
                     if y1 == y0:
-                        intersections.append(x0)
-                        intersections.append(x1)
+                        #intersections.append(x0)
+                        #intersections.append(x1)
                         continue
                     x = (y-y0)*(x1-x0)/(y1-y0) + x0
                     intersections.append(x)
