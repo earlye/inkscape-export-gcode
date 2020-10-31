@@ -39,6 +39,7 @@ def distance(value, defaultValue = None, stream = None):
 
 class GcodeStyle:
     def __init__(self, style, stream=None):
+        self.display = style.get("display", "inline")
         self.depth = distance(style.get("-gcode-depth", None), 0)
         self.startDepth = distance(style.get("-gcode-start-depth", None), 0)
         self.depthIncrement = distance(style.get("-gcode-depth-increment", None), mmFromInch(0.1))
@@ -72,6 +73,8 @@ class GcodeStyle:
         self.supportsCubicSpline = False
         self.safeHeight = mmFromInch(0.25)
 
+    def hasTabs(self):
+        return self.tabHeight and self.tabWidth and self.tabStartInterval
 
 def getGcodeStyle(stream, style):
     stream.comment(f'SvgStyle: {style}')

@@ -32,20 +32,39 @@ class GcodeExporter:
         self.depth = depth
         self.document = document
 
-    def write(self, code):
+    def _write(self, code):
         self.stream.write((' ' * self.depth + code).encode('utf-8'))
 
-    def code(self, code=None, comment = None, **kwargs):
-        self.write(f'{xstr(code)}{gcodeCoordinates(**kwargs)}{wrapComment(comment," ")}\n')
+    def _code(self, code=None, comment = None, **kwargs):
+        self._write(f'{xstr(code)}{gcodeCoordinates(**kwargs)}{wrapComment(comment," ")}\n')
 
     def comment(self, comment):
-        self.write(wrapComment(comment) + '\n')
+        self._write(wrapComment(comment) + '\n')
 
     def indent(self):
         return GcodeExporter(self.stream, self.document, self.depth + 2)
 
     def rapid(self, comment, **kwargs):
-        self.code(code='G00',comment=comment, **kwargs)
+        self._code(code='G00', comment=comment, **kwargs)
 
     def linear(self, comment, **kwargs):
-        self.code(code='G01',comment=comment, **kwargs)
+        self._code(code='G01', comment=comment, **kwargs)
+
+    def select_plane_xy(self, comment):
+        self._code(code='G17', comment=comment)
+
+    def select_units_mm(self, comment):
+        self._code(code='G21', comment=comment)
+
+    def tool_radius_compensation_off(self, comment):
+        self._code(code='G40', comment=comment)
+
+    def absolute_distance_mode(self, comment):
+        self._code(code='G90', comment=comment)
+
+    def end_program(self, comment='end of program'):
+        self._code(code='M02', comment=comment)
+
+    def safe_height(self, gcodeStyle, comment='raise cutter to safe height'):
+        self._code(code='G00', Z=gcodeStyle.safeHeight, F=gcodeStyle.rapidz, comment=comment)
+        
