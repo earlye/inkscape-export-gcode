@@ -1,6 +1,6 @@
-# Inkscape Gcode Exporter 0.0.2
+# Inkscape Gcode Exporter 0.0.3
 
-This is an export extension for Inkscape, focusing on producing g-code
+This is an export extension for Inkscape, focusing on producing g-<code
 that a CNC router can use to cut real-world objects based on an SVG
 document.
 
@@ -122,20 +122,20 @@ When filling using spiral, how far should each offset be stepped over?
 
 3. [Done] Support generating tabs.
 
-4. [in progress] Support offsetting paths to the center, inside, or
+4. [on hold] Support offsetting paths to the center, inside, or
    outside of SVG paths.
 
 5. Support filling paths (cutting pockets) using two facing patterns:
-   * [in progress] spiral
-   * hatch.
+   * [on hold] spiral
+   * [DONE] hatch.
 
 6. Support generating 3d surfacing paths using raster data as a depth
    map. This includes the crazy fill patterns that Inkscape can produce,
    so gradients, waves, yada yada.
 
-7. [ May require a plugin rather than a python extension :-( ] Provide a
-   UI for specifying the CSS styles that control all of the gcode
-   exporting.
+7. [on hold] _Looks like it will require a plugin rather than a python
+   extension :-(_ Provide a UI for specifying the CSS styles that
+   control all of the gcode exporting.
 
 ## Requirements:
 
