@@ -9,37 +9,6 @@ document.
 1. Clone, symlink, or copy this repository into your
 Inkscape/extensions directory and restart Inkscape.
 
-## Goals:
-
-1. [done] Export G-Code suitable for use on a CNC router table,
-   directly from Inkscape.
-
-2. [Done] Support cutting paths to depth in a continuous ramp rather than
-   plunge, cut at offset depth, plunge again, etc., until hitting bottom.
-   Seems each line segment ought to be able to plunge continuously.
-
-3. [Done] Support generating tabs.
-
-4. [in progress] Support offsetting paths to the center, inside, or
-   outside of SVG paths.
-
-5. Support filling paths (cutting pockets) using two facing patterns:
-   * [in progress] spiral
-   * hatch.
-
-6. Support generating 3d surfacing paths using raster data as a depth
-   map. This includes the crazy fill patterns that Inkscape can produce,
-   so gradients, waves, yada yada.
-
-7. [ May require a plugin rather than a python extension :-( ] Provide a
-   UI for specifying the CSS styles that control all of the gcode
-   exporting.
-
-## Non-goals
-
-1. Patching Inkscape itself. We will do so if we think it's necessary
-   in order to accomplish our goals, but would prefer to avoid this.
-
 ## Use:
 
 Gcode is configured through the use of extended CSS styles. This is
@@ -49,17 +18,16 @@ provides.
 Until a UI is developed to edit them, your best bet is to use the XML
 Editor in Inkscape (Edit => XML Editor)
 
-Extended CSS Styles for GCODE control:
+## Extended CSS Styles reference:
 
 ### -gcode-curve-increment
 * Value greater than 0 and less than 1.
-* Default: 0.1
+* Default: 0.05
+
 
 This controls how many 't' increments to use when interpolating curves
 into g-code line segments. Smaller numbers yield smoother curves at
 the cost of longer gcode.
-
-We want to replace this with a tolerance or max-segment-length value.
 
 ### -gcode-depth
 * Value indicating depth of the entire path/pocket
@@ -140,6 +108,56 @@ When filling using spiral, how much does this tool want to be stepped over?
 * Default: 0.8 * tool diameter
 
 When filling using spiral, how far should each offset be stepped over?
+
+
+
+## Goals:
+
+1. [done] Export G-Code suitable for use on a CNC router table,
+   directly from Inkscape.
+
+2. [Done] Support cutting paths to depth in a continuous ramp rather than
+   plunge, cut at offset depth, plunge again, etc., until hitting bottom.
+   Seems each line segment ought to be able to plunge continuously.
+
+3. [Done] Support generating tabs.
+
+4. [in progress] Support offsetting paths to the center, inside, or
+   outside of SVG paths.
+
+5. Support filling paths (cutting pockets) using two facing patterns:
+   * [in progress] spiral
+   * hatch.
+
+6. Support generating 3d surfacing paths using raster data as a depth
+   map. This includes the crazy fill patterns that Inkscape can produce,
+   so gradients, waves, yada yada.
+
+7. [ May require a plugin rather than a python extension :-( ] Provide a
+   UI for specifying the CSS styles that control all of the gcode
+   exporting.
+
+## Requirements:
+
+1. Inkscape v1.1 is recommended, because earlier versions drop
+   extended CSS attributes whenever you take an action that affects
+   CSS values, e.g., changing the visibility or color of an
+   object. This will work with earlier versions, but the inconvenience
+   of losing your settings when turning layers on and off
+   is... annoying.
+
+   * The retention of custom CSS properties was added to Inkscape by
+     this [pull request](https://gitlab.com/inkscape/inkscape/-/merge_requests/2405)
+
+   * This is the first [build pipeline](https://gitlab.com/inkscape/inkscape/-/pipelines/204740791)
+     that included this feature. It has linux and mac artifacts. The latest development
+     version for windows _does_ have this feature.>
+
+## Non-goals
+
+1. Patching Inkscape itself. We will do so if we think it's necessary
+   in order to accomplish our goals (and have - see "Requirements"),
+   but would prefer to avoid this.
 
 
 ## Known Issues:

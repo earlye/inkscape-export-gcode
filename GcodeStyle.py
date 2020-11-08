@@ -59,9 +59,11 @@ class GcodeStyle:
         self.stepOver = distance(style.get("-gcode-stepover", self.toolStepOver))
 
         # Todo: switch from curveIncrement to maxCurveSegmentLength
-        self.curveIncrement = distance(style.get("-gcode-curve-increment", None), 0.1)
-        if self.curveIncrement < 0 or self.curveIncrement > 1:
-            self.curveIncrement = 0.1
+        self.curveIncrement = distance(style.get("-gcode-curve-increment", None), 0.05)
+        if self.curveIncrement < 0:
+            self.curveIncrement = 0.05
+        if self.curveIncrement > 1:
+            self.curveIncrement = 1
         self.edgeMode = style.get("-gcode-edge-mode", 'center')
         self.fillMode = style.get("-gcode-fill-mode", '')
 
