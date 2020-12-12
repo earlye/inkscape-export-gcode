@@ -27,7 +27,7 @@ def exportPath(stream, element, transform, methods):
     stream.comment(f"gcodeStyle:{gcodeStyle.__dict__}")
     csp = CubicSuperPath(path).to_path()
     stream.comment(f"csp:{csp}")
-    zones = geometry.cspToZones(stream, csp, gcodeStyle, transform)
+    zones = geometry.cspToZones(stream, csp, gcodeStyle, effectiveTransform)
 
     contour(stream.indent(), gcodeStyle, zones, effectiveTransform)
     if gcodeStyle.fillMode == 'hatch':
