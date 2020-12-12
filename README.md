@@ -1,4 +1,4 @@
-# Inkscape Gcode Exporter 0.0.3
+# Inkscape Gcode Exporter 0.0.4
 
 This is an export extension for Inkscape, focusing on producing g-<code
 that a CNC router can use to cut real-world objects based on an SVG
@@ -158,7 +158,6 @@ When filling using spiral, how far should each offset be stepped over?
 1. Patching Inkscape itself. We will do so if we think it's necessary
    in order to accomplish our goals (and have - see "Requirements"),
    but would prefer to avoid this.
-
 
 ## Known Issues:
 
